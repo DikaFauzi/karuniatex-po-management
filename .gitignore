@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/po_an_ots.db
+static/uploads/*
+!static/uploads/.gitkeep
