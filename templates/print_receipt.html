@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Struk {{ order["no_po"] }}</title>
+<style>
+@page{size:80mm auto;margin:4mm}
+body{margin:0;background:#eee;font-family:Arial,sans-serif;color:#111}
+.receipt{width:72mm;margin:15px auto;background:#fff;padding:5mm;box-sizing:border-box}
+.logo{display:block;width:58mm;height:auto;margin:0 auto 4mm}
+.center{text-align:center}.title{font-weight:800;font-size:16px}.small{font-size:11px}.line{border-top:1px dashed #222;margin:8px 0}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin:3px 0}.row b{text-align:right}
+.item{font-size:12px;margin:7px 0}.item-name{font-weight:700}.muted{font-size:10px;color:#555}
+.total{font-size:13px;font-weight:700}.actions{text-align:center;margin:15px}
+.actions button{padding:9px 14px;border:0;border-radius:7px;background:#0e789c;color:#fff;font-weight:700}
+@media print{body{background:#fff}.receipt{margin:0;width:72mm;padding:2mm}.actions{display:none}}
+</style>
+</head>
+<body>
+<div class="receipt">
+  <img class="logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex">
+  <div class="center title">STRUK PESANAN / DP</div>
+  <div class="center small">{{ order["no_po"] }}</div>
+  <div class="line"></div>
+  <div class="row"><span>Customer</span><b>{{ order["customer"] }}</b></div>
+  <div class="row"><span>Tanggal</span><b>{{ order["tanggal"] }}</b></div>
+  <div class="row"><span>Status</span><b>{{ order["status"] }}</b></div>
+  <div class="row"><span>Target</span><b>{{ order["target"] }}</b></div>
+  <div class="line"></div>
+  {% for i in order["items"] %}
+  <div class="item">
+    <div class="item-name">{{ loop.index }}. {{ i.jenis_kain }} - {{ i.warna }}</div>
+    <div class="muted">{{ i.qty_kg }} KG • {{ i.qty_roll }} Roll × Rp {{ "{:,.0f}".format(i.harga_per_kg).replace(",", ".") }}</div>
+    <div class="row"><span>Total Item</span><b>Rp {{ "{:,.0f}".format(i.qty_kg * i.harga_per_kg).replace(",", ".") }}</b></div>
+  </div>
+  {% endfor %}
+  <div class="line"></div>
+  <div class="row total"><span>Total</span><b>Rp {{ "{:,.0f}".format(order["total"]).replace(",", ".") }}</b></div>
+  <div class="row total"><span>Total DP</span><b>Rp {{ "{:,.0f}".format(order["total_dp"]).replace(",", ".") }}</b></div>
+  <div class="row total"><span>Sisa</span><b>Rp {{ "{:,.0f}".format(order["sisa"]).replace(",", ".") }}</b></div>
+  {% if order["payments"] %}
+  <div class="line"></div>
+  <div class="small"><b>RIWAYAT DP</b></div>
+  {% for p in order["payments"] %}
+  <div class="row"><span>{{ p.created_at }}</span><b>Rp {{ "{:,.0f}".format(p.nominal).replace(",", ".") }}</b></div>
+  {% endfor %}
+  {% endif %}
+  <div class="line"></div>
+  <div class="center small">Terima kasih</div>
+</div>
+<div class="actions"><button onclick="window.print()">🖨 Print Struk</button></div>
+</body>
+</html>
