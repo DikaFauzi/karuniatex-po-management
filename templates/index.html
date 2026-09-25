@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PO AN OTS - Python</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production6.3">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap">
+    <img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex Logo">
+    <div class="brand-text">
+    <small>ORDER MANAGEMENT SYSTEM</small>
+    <h1>KaruniaTex PO Management</h1>
+    <p>Kelola purchase order, pembayaran DP, master data, print, dan laporan Excel.</p>
+  </div>
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn light" href="/database">Master Data</a>
+    <a class="btn light" href="/excel/template">Template Excel</a>
+    <a class="btn light" href="/excel/report">Export Laporan PO</a>
+    <label class="btn light">Import Excel<input id="excelImport" type="file" accept=".xlsx" hidden></label>
+    <button class="btn light" id="tutorialBtn">? Tutorial</button>
+    <button class="btn primary" id="addBtn">+ Tambah PO</button>
+  </div>
+</header>
+
+<main class="container">
+  <section class="workspace-head" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <div>
+      <h2 style="margin:0;font-size:20px;color:#16384e">Dashboard PO</h2>
+      <p style="margin:4px 0 0;color:#718391;font-size:13px">Pantau pesanan, pembayaran DP, target selesai, dan sisa tagihan dalam satu tempat.</p>
+    </div>
+  </section>
+  <section class="kpis">
+    <div class="kpi"><span>Total PO</span><strong id="kTotal">0</strong></div>
+    <div class="kpi"><span>Proses</span><strong id="kProses">0</strong></div>
+    <div class="kpi"><span>Ready</span><strong id="kReady">0</strong></div>
+    <div class="kpi"><span>Done</span><strong id="kDone">0</strong></div>
+    <div class="kpi"><span>Sisa Tagihan</span><strong id="kSisa">Rp0</strong></div>
+  </section>
+
+  <section class="toolbar card">
+    <input id="search" placeholder="Cari No PO, customer, kain, warna...">
+    <button class="btn danger bulk-delete-btn" id="deleteSelectedBtn" type="button" disabled>Hapus Dipilih (0)</button>
+    <select id="statusFilter">
+      <option value="">Semua status</option>
+      <option>BELUM DP</option><option>DP MASUK</option><option>PROSES</option><option>READY</option><option>LUNAS</option><option>DONE</option><option>CANCEL</option>
+    </select>
+  </section>
+
+  <section class="card table-card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th class="no-po-head">
+      <div class="no-po-head-inner">
+        <input id="selectAllRows" class="row-checkbox" type="checkbox" aria-label="Pilih semua PO">
+        <span>No PO</span>
+        <button id="sortNoPoBtn" class="sort-inline subtle-sort" type="button" title="Urutkan No PO A-Z" aria-label="Urutkan No PO A-Z" data-sort="az">
+          <span class="sort-stack" aria-hidden="true"><span>▲</span><span>▼</span></span>
+        </button>
+      </div>
+    </th><th>Dibuat</th><th>Customer</th><th>Bahan/Warna</th><th>Qty KG</th><th>Roll</th><th>Total</th><th>Total DP</th><th>Sisa</th><th>Target</th><th>Status</th><th>Foto</th><th>Aksi</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination-footer">
+      <div class="pagination-info" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+      <div class="pagination-controls" id="pagination"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dialog" class="modal">
+  <form id="poForm">
+    <div class="modal-head">
+      <div><small>FORM PESANAN</small><h2 id="formTitle">Tambah PO</h2></div>
+      <button type="button" class="x" id="closeBtn">×</button>
+    </div>
+    <input type="hidden" id="editId">
+    <div class="grid">
+      <label><span>No PO</span><input id="noPo" readonly placeholder="Otomatis saat disimpan"></label>
+      <label><span>Tanggal</span><input id="tanggal" type="date" required></label>
+      <label class="span2"><span>Customer</span><input id="customer" list="customerList" required></label>
+
+      <div class="span4 section">
+        <div class="section-head">
+          <div><h3>Daftar Bahan & Warna</h3><p class="section-note">Isi KG atau Roll. Sistem akan menghitung pasangannya otomatis dengan patokan ±25 KG/roll.</p></div>
+          <button type="button" class="btn soft" id="addItem">+ Tambah Bahan</button>
+        </div>
+        <div id="items"></div>
+      </div>
+
+      <div class="span2 section">
+        <div class="section-head"><div><h3>Riwayat DP</h3><p class="section-note">Nominal akan diformat Rupiah. Tanggal & jam tersimpan otomatis.</p></div></div>
+        <div class="money-input">
+          <span>Rp</span><input id="newDp" inputmode="numeric" autocomplete="off" placeholder="0">
+          <button type="button" class="btn soft" id="addDp">+ Catat DP</button>
+        </div>
+        <div id="payments" class="payments-list"></div>
+      </div>
+
+      <div class="span2 section">
+        <label><span>Estimasi</span><select id="estimasi"><option value="7">1 Minggu</option><option value="14">2 Minggu</option><option value="21" selected>3 Minggu</option><option value="28">4 Minggu</option></select></label>
+        <label><span>Status</span><select id="status"><option>BELUM DP</option><option>DP MASUK</option><option>PROSES</option><option>READY</option><option>LUNAS</option><option>DONE</option><option>CANCEL</option></select></label>
+        <label><span>Catatan</span><textarea id="catatan" rows="4"></textarea></label>
+      </div>
+
+      <div class="span4 summary">
+        <div><span>Total</span><strong id="sTotal">Rp0</strong></div>
+        <div><span>DP</span><strong id="sDp">Rp0</strong></div>
+        <div><span>Sisa</span><strong id="sSisa">Rp0</strong></div>
+        <div><span>Target</span><strong id="sTarget">-</strong></div>
+      </div>
+
+      <div class="span4 section">
+        <div class="section-head">
+          <div><h3>Foto Bukti</h3><p class="section-note">Bisa pilih beberapa foto sekaligus.</p></div>
+          <span id="photoCount" class="photo-count">0 foto</span>
+        </div>
+        <label class="upload-box" for="images">
+          <div class="upload-icon">🖼️</div>
+          <div><b>Klik untuk memilih foto</b><small>JPG / PNG / WEBP</small></div>
+          <input id="images" type="file" accept="image/*" multiple hidden>
+        </label>
+        <div id="gallery" class="gallery"></div>
+      </div>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn light" id="cancelBtn">Batal</button><button class="btn primary">Simpan PO</button></div>
+  </form>
+</dialog>
+
+<datalist id="customerList"></datalist>
+<datalist id="fabricList"></datalist>
+<datalist id="colorList"></datalist>
+
+<div class="tutorial-overlay" id="tutorialOverlay" hidden>
+  <div class="tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+    <div class="tutorial-top">
+      <div><span class="tutorial-step-label" id="tutorialStepLabel">LANGKAH 1 DARI 5</span><h2 id="tutorialTitle">Selamat datang</h2></div>
+      <button class="tutorial-close" id="tutorialSkipTop" type="button" aria-label="Lewati tutorial">×</button>
+    </div>
+    <div class="tutorial-visual" id="tutorialVisual"><div class="tutorial-icon">👋</div></div>
+    <p id="tutorialText">Gunakan dashboard untuk memantau seluruh PO, status proses, DP, target selesai, dan sisa tagihan.</p>
+    <div class="tutorial-progress" id="tutorialProgress"></div>
+    <div class="tutorial-actions">
+      <button class="btn light" type="button" id="tutorialSkip">Lewati</button>
+      <div class="tutorial-nav"><button class="btn light" type="button" id="tutorialPrev">Kembali</button><button class="btn primary" type="button" id="tutorialNext">Lanjut</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="floatingActionMenu" class="floating-action-menu" hidden>
+  <button type="button" data-floating-action="edit">✏️ Edit</button>
+  <button type="button" data-floating-action="wa">💬 Copy WA</button>
+  <button type="button" data-floating-action="struk">🧾 Print Struk</button>
+  <button type="button" data-floating-action="dp">🖨️ Bukti DP</button>
+  <button type="button" class="danger-action" data-floating-action="delete">🗑️ Hapus</button>
+</div>
+
+<div id="photoLightbox" class="photo-lightbox" hidden>
+  <div class="photo-lightbox-backdrop" data-close-lightbox></div>
+  <div class="photo-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Preview foto">
+    <div class="photo-lightbox-head">
+      <div><span class="photo-lightbox-label">PREVIEW FOTO</span><strong id="photoLightboxTitle">Foto Bukti</strong></div>
+      <button type="button" class="photo-lightbox-close" data-close-lightbox aria-label="Tutup">×</button>
+    </div>
+    <div class="photo-lightbox-stage">
+      <button type="button" class="photo-lightbox-nav prev" id="photoPrevBtn" aria-label="Foto sebelumnya">‹</button>
+      <img id="photoLightboxImage" alt="Preview foto bukti">
+      <button type="button" class="photo-lightbox-nav next" id="photoNextBtn" aria-label="Foto berikutnya">›</button>
+    </div>
+    <div class="photo-lightbox-footer"><span id="photoLightboxCounter">1 / 1</span></div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}?v=production6.5"></script>
+</body>
+</html>
