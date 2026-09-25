@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Database - PO AN OTS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=portfolio2">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap">
+    <img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex Logo">
+    <div class="brand-text">
+    <small>MASTER DATA</small>
+    <h1>Master Data Management</h1>
+    <p>Kelola customer, jenis kain, dan warna untuk mendukung proses input PO.</p>
+  </div>
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn light" href="/">← Kembali ke PO</a>
+  </div>
+</header>
+
+<main class="container database-container">
+  <section class="db-info card portfolio-master-summary">
+    <div>
+      <span class="summary-eyebrow">MASTER DATABASE</span>
+      <h3>Data Referensi PO</h3>
+      <p>Master data digunakan sebagai pilihan otomatis pada form pesanan agar input lebih cepat dan konsisten.</p>
+    </div>
+    <div class="master-stats">
+      <div><strong>108</strong><span>Jenis Kain</span></div>
+      <div><strong>157</strong><span>Warna</span></div>
+      <div><strong id="masterCustomerStat">0</strong><span>Customer</span></div>
+    </div>
+  </section>
+
+  <section class="db-grid">
+    <article class="card db-panel">
+      <h2>Customer <span id="customerCount"></span></h2>
+      <div class="db-add"><input id="newCustomer" placeholder="Nama customer"><button class="btn primary" data-add="customers">Tambah</button></div>
+      <input class="db-search" data-search="customers" placeholder="Cari customer...">
+      <div id="customersList" class="db-list"></div>
+    </article>
+
+    <article class="card db-panel">
+      <h2>Jenis Kain <span id="fabricCount"></span></h2>
+      <div class="db-add"><input id="newFabric" placeholder="Jenis kain"><button class="btn primary" data-add="fabrics">Tambah</button></div>
+      <input class="db-search" data-search="fabrics" placeholder="Cari jenis kain...">
+      <div id="fabricsList" class="db-list"></div>
+    </article>
+
+    <article class="card db-panel">
+      <h2>Warna <span id="colorCount"></span></h2>
+      <div class="db-add"><input id="newColor" placeholder="Warna kain"><button class="btn primary" data-add="colors">Tambah</button></div>
+      <input class="db-search" data-search="colors" placeholder="Cari warna...">
+      <div id="colorsList" class="db-list"></div>
+    </article>
+  </section>
+</main>
+
+<script src="{{ url_for('static', filename='js/database.js') }}?v=portfolio2"></script>
+</body>
+</html>
