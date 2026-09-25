@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cetak DP - {{ order["no_po"] }}</title>
+<style>
+:root{--primary:#0f6484;--header:#245f86;--line:#d9e7ef;--muted:#6f8191}
+*{box-sizing:border-box}
+body{font-family:Segoe UI,Arial,sans-serif;background:#edf3f6;margin:0;padding:22px;color:#173247}
+.sheet{width:812px;max-width:calc(100vw - 28px);margin:auto;background:#fff;padding:26px;border-radius:16px;box-shadow:0 12px 34px rgba(15,74,100,.10)}
+.head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--primary);padding-bottom:16px;align-items:flex-start}
+.print-brand{display:flex;align-items:center;gap:18px;min-width:0}.print-brand img{width:230px;max-width:39vw;height:auto;display:block}
+.print-brand h1{margin:0 0 5px;color:#0e5b7a;font-size:25px;line-height:1.1}.order-no{font-size:15px;font-weight:800;color:#111}
+.head-meta{text-align:right;white-space:nowrap;font-size:14px;color:#173247}.head-meta .status{margin-top:5px;color:#6f8191}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:17px 0 20px}.box{border:1px solid var(--line);border-radius:10px;padding:12px}
+.box span{font-size:11px;color:var(--muted)}.box b{display:block;margin-top:5px;font-size:16px;color:#0c2434}
+h3{margin:18px 0 10px;font-size:18px;color:#0d2434}table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border:1px solid var(--line);padding:8px 9px;text-align:left;font-size:12px}th{background:var(--header);color:#fff;font-weight:800}td{background:#fff}
+.actions{display:flex;justify-content:center;gap:10px;margin-top:20px}.actions button{padding:10px 16px;border:0;border-radius:9px;font-weight:800;cursor:pointer}
+.print-btn{background:#0e789c;color:#fff}.png-btn{background:#e9f5f9;color:#0e6381;border:1px solid #cde4ec!important}
+@media(max-width:700px){body{padding:8px}.sheet{padding:15px}.head{flex-direction:column}.head-meta{text-align:left}.print-brand{flex-direction:column;align-items:flex-start}.print-brand img{width:210px;max-width:70vw}.grid{grid-template-columns:1fr}.actions{flex-wrap:wrap}}
+@media print{body{background:#fff;padding:0}.sheet{box-shadow:none;width:100%;max-width:none;padding:0;border-radius:0}.actions{display:none}}
+</style>
+</head>
+<body>
+<div class="sheet" id="receiptCard">
+  <div class="head">
+    <div class="print-brand">
+      <img id="brandLogo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex Logo">
+      <div><h1>BUKTI DP / PESANAN</h1><div class="order-no">{{ order["no_po"] }}</div></div>
+    </div>
+    <div class="head-meta"><div>{{ order["created_at"]|dt_id }}</div><div class="status">{{ order["status"] }}</div></div>
+  </div>
+  <div class="grid">
+    <div class="box"><span>Customer</span><b>{{ order["customer"] }}</b></div>
+    <div class="box"><span>Total Pesanan</span><b>Rp {{ "{:,.0f}".format(order["total"]).replace(",", ".") }}</b></div>
+    <div class="box"><span>Sisa Tagihan</span><b>Rp {{ "{:,.0f}".format(order["sisa"]).replace(",", ".") }}</b></div>
+  </div>
+  <h3>Detail Pesanan</h3>
+  <table>
+    <thead><tr><th>Jenis Kain</th><th>Warna</th><th>Qty KG</th><th>Roll</th><th>Harga/KG</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for i in order["items"] %}
+      <tr><td>{{ i.jenis_kain }}</td><td>{{ i.warna }}</td><td>{{ "{:g}".format(i.qty_kg) }}</td><td>{{ "{:g}".format(i.qty_roll) }}</td><td>Rp {{ "{:,.0f}".format(i.harga_per_kg).replace(",", ".") }}</td><td>Rp {{ "{:,.0f}".format(i.qty_kg * i.harga_per_kg).replace(",", ".") }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h3>Riwayat DP</h3>
+  <table>
+    <thead><tr><th style="width:12%">No</th><th>Tanggal / Jam</th><th style="width:31%">Nominal</th></tr></thead>
+    <tbody>
+      {% for p in order["payments"] %}
+      <tr><td>{{ loop.index }}</td><td>{{ p.created_at|dt_id }}</td><td>Rp {{ "{:,.0f}".format(p.nominal).replace(",", ".") }}</td></tr>
+      {% else %}<tr><td colspan="3">Belum ada pembayaran DP.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <div class="actions"><button class="print-btn" onclick="window.print()">🖨 Print DP</button><button class="png-btn" id="downloadPngBtn">🖼 Download PNG</button></div>
+</div>
+<script>
+const ORDER_DATA={{{"no_po":order["no_po"],"created_at":order["created_at"]|dt_id,"status":order["status"],"customer":order["customer"],"total":order["total"],"sisa":order["sisa"],"items":order["items"],"payments":order["payments"]}|tojson}};
+const RP=n=>"Rp "+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(Number(n||0));
+function loadImg(src){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src})}
+function normalizeDateTime(value){if(!value)return "-";const d=new Date(value);if(Number.isNaN(d.getTime()))return String(value);return d.toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).replace(",","")}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+async function downloadSameFormatPng(){
+ const o=ORDER_DATA,W=1200,H=390+Math.max(o.items.length,1)*46+Math.max(o.payments.length,1)*42+120,c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d");
+ ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#0f6484";ctx.lineWidth=3;
+ const logo=await loadImg("{{ url_for('static', filename='img/karuniatex-logo.png') }}");if(logo){const r=Math.min(350/logo.width,92/logo.height);ctx.drawImage(logo,40,35,logo.width*r,logo.height*r)}
+ ctx.fillStyle="#0e5b7a";ctx.font="700 34px Segoe UI";ctx.fillText("BUKTI DP / PESANAN",400,68);ctx.fillStyle="#111";ctx.font="700 19px Segoe UI";ctx.fillText(o.no_po,400,101);
+ ctx.textAlign="right";ctx.fillStyle="#173247";ctx.font="17px Segoe UI";ctx.fillText(o.created_at,1155,55);ctx.fillStyle="#6f8191";ctx.fillText(o.status,1155,88);ctx.textAlign="left";
+ ctx.beginPath();ctx.moveTo(40,128);ctx.lineTo(1160,128);ctx.stroke();
+ function box(x,w,label,value){ctx.fillStyle="#fff";ctx.strokeStyle="#d9e7ef";ctx.lineWidth=1;roundRect(ctx,x,150,w,80,12);ctx.fill();ctx.stroke();ctx.fillStyle="#6f8191";ctx.font="14px Segoe UI";ctx.fillText(label,x+14,176);ctx.fillStyle="#0c2434";ctx.font="700 21px Segoe UI";ctx.fillText(value,x+14,207)}
+ box(40,355,"Customer",o.customer);box(410,355,"Total Pesanan",RP(o.total));box(780,380,"Sisa Tagihan",RP(o.sisa));
+ let y=275;ctx.fillStyle="#0d2434";ctx.font="700 23px Segoe UI";ctx.fillText("Detail Pesanan",40,y);y+=28;
+ const cols=[40,300,510,650,770,980],widths=[260,210,140,120,210,180],heads=["Jenis Kain","Warna","Qty KG","Roll","Harga/KG","Total"];
+ heads.forEach((h,i)=>{ctx.fillStyle="#245f86";ctx.fillRect(cols[i],y,widths[i],44);ctx.fillStyle="#fff";ctx.font="700 14px Segoe UI";ctx.fillText(h,cols[i]+10,y+28)});y+=44;
+ o.items.forEach(it=>{const vals=[it.jenis_kain,it.warna,String(it.qty_kg),String(it.qty_roll),RP(it.harga_per_kg),RP(Number(it.qty_kg)*Number(it.harga_per_kg))];vals.forEach((v,i)=>{ctx.fillStyle="#fff";ctx.fillRect(cols[i],y,widths[i],46);ctx.strokeStyle="#d9e7ef";ctx.strokeRect(cols[i],y,widths[i],46);ctx.fillStyle="#173247";ctx.font="14px Segoe UI";ctx.fillText(String(v),cols[i]+10,y+29)});y+=46});
+ y+=35;ctx.fillStyle="#0d2434";ctx.font="700 23px Segoe UI";ctx.fillText("Riwayat DP",40,y);y+=28;
+ const pc=[40,175,790],pw=[135,615,370],ph=["No","Tanggal / Jam","Nominal"];ph.forEach((h,i)=>{ctx.fillStyle="#245f86";ctx.fillRect(pc[i],y,pw[i],42);ctx.fillStyle="#fff";ctx.font="700 14px Segoe UI";ctx.fillText(h,pc[i]+10,y+27)});y+=42;
+ if(o.payments.length){o.payments.forEach((p,idx)=>{[String(idx+1),normalizeDateTime(p.created_at),RP(p.nominal)].forEach((v,i)=>{ctx.fillStyle="#fff";ctx.fillRect(pc[i],y,pw[i],42);ctx.strokeStyle="#d9e7ef";ctx.strokeRect(pc[i],y,pw[i],42);ctx.fillStyle="#173247";ctx.font="14px Segoe UI";ctx.fillText(v,pc[i]+10,y+27)});y+=42})}
+ else{ctx.fillStyle="#fff";ctx.fillRect(40,y,1120,42);ctx.strokeStyle="#d9e7ef";ctx.strokeRect(40,y,1120,42);ctx.fillStyle="#6f8191";ctx.font="14px Segoe UI";ctx.fillText("Belum ada pembayaran DP.",52,y+27)}
+ const a=document.createElement("a");a.download=`${o.no_po}-DP.png`;a.href=c.toDataURL("image/png");a.click()
+}
+document.getElementById("downloadPngBtn").addEventListener("click",downloadSameFormatPng);
+</script>
+</body>
+</html>
