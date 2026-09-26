@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Restore DP - KaruniaTex</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap"><img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex"><div class="brand-text"><small>SERVER CONTROL</small><h1>Restore DP</h1><p>DP yang dihapus tidak langsung hilang dan dapat dikembalikan.</p></div></div>
+  <div class="actions"><span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span><a class="btn light" href="/">← Dashboard</a></div>
+</header>
+<main class="container">
+  <section class="card restore-info"><b>Recycle Bin DP</b><p>Setiap DP yang dihapus dari Edit PO disimpan sebagai data terhapus. Tekan Restore untuk mengembalikannya ke PO terkait.</p></section>
+  <section class="toolbar card"><input id="trashSearch" placeholder="Cari No PO, customer, nominal, user..."><button class="btn light" id="refreshTrash">Refresh</button></section>
+  <section class="card table-card"><div class="table-wrap"><table class="admin-table"><thead><tr><th>No PO</th><th>Customer</th><th>Nominal DP</th><th>Tanggal DP</th><th>Dihapus</th><th>Oleh</th><th>Aksi</th></tr></thead><tbody id="trashBody"></tbody></table></div></section>
+</main>
+<script>
+let rows=[];const body=document.getElementById("trashBody"),search=document.getElementById("trashSearch");
+const rp=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n||0));
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fmt=v=>{try{return new Date(v).toLocaleString("id-ID")}catch{return v}};
+function render(){const q=search.value.toLowerCase();const data=rows.filter(x=>JSON.stringify(x).toLowerCase().includes(q));body.innerHTML=data.map(x=>`<tr><td><b>${esc(x.no_po)}</b></td><td>${esc(x.customer)}</td><td><b>${rp(x.nominal)}</b></td><td>${fmt(x.created_at)}</td><td>${fmt(x.deleted_at)}</td><td>${esc(x.deleted_by||"-")}</td><td><button class="btn primary" data-restore="${x.id}">Restore DP</button></td></tr>`).join("")||'<tr><td colspan="7">Tidak ada DP terhapus.</td></tr>'}
+async function load(){const r=await fetch("/api/deleted-payments");rows=await r.json();render()}
+body.onclick=async e=>{const b=e.target.closest("[data-restore]");if(!b)return;if(!confirm("Kembalikan DP ini ke PO?"))return;const r=await fetch("/api/payments/"+b.dataset.restore+"/restore",{method:"POST"});const j=await r.json();if(!r.ok){alert(j.error||"Gagal restore");return}await load();alert("DP berhasil dikembalikan.")};
+search.oninput=render;document.getElementById("refreshTrash").onclick=load;load();
+</script>
+</body></html>
