@@ -4,15 +4,9 @@ Aplikasi web untuk mengelola Purchase Order tekstil, pembayaran DP, master data,
 
 ## Preview Fitur
 
-![KaruniaTex PO Management Feature Overview](docs/screenshots/feature-overview.jpg)
+![Dashboard KaruniaTex PO Management](docs/screenshots/01-dashboard-po.jpg)
 
-Preview di atas menampilkan alur utama aplikasi:
-1. Dashboard monitoring PO dan menu aksi.
-2. Master Data customer, jenis kain, dan warna.
-3. Export laporan PO ke Excel multi-sheet.
-4. Halaman Bukti DP / Pesanan.
-5. Print Preview Bukti DP.
-6. Output Bukti DP dalam format PNG.
+Preview utama menggunakan screenshot dashboard resolusi penuh agar tampilan fitur tetap tajam dan mudah dibaca di GitHub.
 
 ## Fitur
 - Dashboard monitoring PO
