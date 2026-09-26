@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - KaruniaTex PO Management</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
+</head>
+<body class="login-page">
+<main class="login-shell">
+  <section class="login-card">
+    <img class="login-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex">
+    <div class="login-heading">
+      <small>ORDER MANAGEMENT SYSTEM</small>
+      <h1>Masuk ke KaruniaTex PO</h1>
+      <p>Pilih akun lalu masukkan PIN 6 digit.</p>
+    </div>
+    {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+    <form method="post" class="login-form" autocomplete="off">
+      <label><span>Akun</span>
+        <select name="username" required>
+          <option value="server">SERVER — Full Akses</option>
+          <option value="admin1">ADMIN 1</option>
+          <option value="admin2">ADMIN 2</option>
+          <option value="admin3">ADMIN 3</option>
+        </select>
+      </label>
+      <label><span>PIN</span>
+        <input name="pin" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="••••••" required autofocus>
+      </label>
+      <button class="btn primary login-submit" type="submit">Masuk</button>
+    </form>
+    <p class="login-note">SERVER memiliki akses penuh termasuk Master Data, Import Excel, Log Aktivitas, Restore DP, hapus PO, dan pengaturan PIN user.</p>
+  </section>
+</main>
+</body>
+</html>
