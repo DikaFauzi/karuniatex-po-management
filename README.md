@@ -34,6 +34,12 @@ Bukti DP / Pesanan dapat dibuka dalam tampilan print preview sehingga siap dicet
 
 ![Print Preview Bukti DP](docs/screenshots/05-print-preview.webp)
 
+### 6. Export Laporan Excel
+
+Contoh hasil export laporan PO ke Excel. Workbook menyediakan sheet **Ringkasan**, **Laporan PO**, **Detail Item**, dan **Riwayat DP** untuk memudahkan pengecekan dan dokumentasi.
+
+![Export Laporan Excel](docs/screenshots/06-export-laporan-excel.webp)
+
 ## Fitur Utama
 
 - Dashboard monitoring PO
