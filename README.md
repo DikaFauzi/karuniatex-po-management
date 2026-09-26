@@ -8,7 +8,7 @@ Aplikasi web untuk mengelola **Purchase Order tekstil**, pembayaran DP, master d
 
 Menampilkan ringkasan total PO, proses, ready, done, sisa tagihan, pencarian, filter status, sorting No PO, pagination, foto, dan menu aksi.
 
-![Dashboard PO](docs/screenshots/01-dashboard-po.jpg)
+![Dashboard PO](docs/screenshots/01-dashboard-po.webp)
 
 ### 2. Form Tambah PO
 
