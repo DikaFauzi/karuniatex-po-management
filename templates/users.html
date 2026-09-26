@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akses User - KaruniaTex</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap"><img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex"><div class="brand-text"><small>SERVER CONTROL</small><h1>Akses User</h1><p>Kelola PIN SERVER, ADMIN 1, ADMIN 2, dan ADMIN 3.</p></div></div>
+  <div class="actions"><span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span><a class="btn light" href="/">← Dashboard</a></div>
+</header>
+<main class="container">
+  <section class="card access-note"><b>Pembagian akses</b><p><strong>SERVER:</strong> full akses. <strong>ADMIN 1–3:</strong> operasional PO, DP, foto, print, template, dan export laporan. Penghapusan PO, Master Data, Import Excel, Log, Restore DP, serta pengaturan PIN hanya SERVER.</p></section>
+  <section id="userGrid" class="user-grid"></section>
+</main>
+<script>
+let users=[];const grid=document.getElementById("userGrid");
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function render(){grid.innerHTML=users.map(u=>`<article class="card user-access-card"><div class="user-access-head"><div><span class="summary-eyebrow">${esc(u.role)}</span><h3>${esc(u.display_name)}</h3><small>Username: ${esc(u.username)}</small></div><span class="badge">${u.active?"AKTIF":"NONAKTIF"}</span></div><label><span>PIN Baru (6 digit)</span><input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" data-pin="${u.id}" placeholder="••••••"></label><button class="btn primary" data-save-pin="${u.id}">Simpan PIN</button></article>`).join("")}
+async function load(){const r=await fetch("/api/users");users=await r.json();render()}
+grid.onclick=async e=>{const b=e.target.closest("[data-save-pin]");if(!b)return;const id=b.dataset.savePin,input=grid.querySelector(`[data-pin="${id}"]`),pin=input.value.trim();if(!/^\d{6}$/.test(pin)){alert("PIN harus 6 digit angka.");return}if(!confirm("Ubah PIN akun ini?"))return;const r=await fetch("/api/users/"+id+"/pin",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin})});const j=await r.json();if(!r.ok){alert(j.error||"Gagal");return}input.value="";alert("PIN berhasil diubah.")};
+load();
+</script>
+</body></html>
