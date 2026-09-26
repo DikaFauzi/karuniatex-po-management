@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Database - PO AN OTS</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=portfolio2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
 </head>
 <body>
 <header class="topbar">
@@ -18,7 +18,12 @@
     </div>
   </div>
   <div class="actions">
+    <span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span>
+    <a class="btn light" href="/users">Akses User</a>
+    <a class="btn light" href="/logs">Log Aktivitas</a>
+    <a class="btn light" href="/restore-dp">Restore DP</a>
     <a class="btn light" href="/">← Kembali ke PO</a>
+    <form method="post" action="/logout" class="logout-form"><button class="btn light" type="submit">Keluar</button></form>
   </div>
 </header>
 
