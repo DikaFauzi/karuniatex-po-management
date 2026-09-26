@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PO AN OTS - Python</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production6.3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
 </head>
 <body>
 <header class="topbar">
@@ -18,12 +18,23 @@
     </div>
   </div>
   <div class="actions">
+    <span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span>
+    {% if is_server %}
     <a class="btn light" href="/database">Master Data</a>
+    <a class="btn light" href="/users">Akses User</a>
+    <a class="btn light" href="/logs">Log Aktivitas</a>
+    <a class="btn light" href="/restore-dp">Restore DP</a>
+    {% endif %}
     <a class="btn light" href="/excel/template">Template Excel</a>
     <a class="btn light" href="/excel/report">Export Laporan PO</a>
+    {% if is_server %}
     <label class="btn light">Import Excel<input id="excelImport" type="file" accept=".xlsx" hidden></label>
+    {% else %}
+    <input id="excelImport" type="file" hidden disabled>
+    {% endif %}
     <button class="btn light" id="tutorialBtn">? Tutorial</button>
     <button class="btn primary" id="addBtn">+ Tambah PO</button>
+    <form method="post" action="/logout" class="logout-form"><button class="btn light" type="submit">Keluar</button></form>
   </div>
 </header>
 
@@ -44,7 +55,7 @@
 
   <section class="toolbar card">
     <input id="search" placeholder="Cari No PO, customer, kain, warna...">
-    <button class="btn danger bulk-delete-btn" id="deleteSelectedBtn" type="button" disabled>Hapus Dipilih (0)</button>
+    <button class="btn danger bulk-delete-btn" id="deleteSelectedBtn" type="button" disabled {% if not is_server %}hidden{% endif %}>Hapus Dipilih (0)</button>
     <select id="statusFilter">
       <option value="">Semua status</option>
       <option>BELUM DP</option><option>DP MASUK</option><option>PROSES</option><option>READY</option><option>LUNAS</option><option>DONE</option><option>CANCEL</option>
@@ -159,7 +170,7 @@
   <button type="button" data-floating-action="wa">💬 Copy WA</button>
   <button type="button" data-floating-action="struk">🧾 Print Struk</button>
   <button type="button" data-floating-action="dp">🖨️ Bukti DP</button>
-  <button type="button" class="danger-action" data-floating-action="delete">🗑️ Hapus</button>
+  {% if is_server %}<button type="button" class="danger-action" data-floating-action="delete">🗑️ Hapus</button>{% endif %}
 </div>
 
 <div id="photoLightbox" class="photo-lightbox" hidden>
@@ -178,6 +189,7 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}?v=production6.5"></script>
+<script>window.APP_USER={{ user|tojson }};window.APP_IS_SERVER={{ 'true' if is_server else 'false' }};</script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=production7.0"></script>
 </body>
 </html>
