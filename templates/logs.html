@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Log Aktivitas - KaruniaTex</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap"><img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex"><div class="brand-text"><small>SERVER CONTROL</small><h1>Log Aktivitas</h1><p>Riwayat aktivitas user pada sistem.</p></div></div>
+  <div class="actions"><span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span><a class="btn light" href="/">← Dashboard</a></div>
+</header>
+<main class="container">
+  <section class="toolbar card"><input id="logSearch" placeholder="Cari user, aksi, No PO, detail..."><button class="btn light" id="refreshLogs">Refresh</button></section>
+  <section class="card table-card"><div class="table-wrap"><table class="admin-table"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Objek</th><th>ID</th><th>Detail</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div></section>
+</main>
+<script>
+const body=document.getElementById("logBody"),search=document.getElementById("logSearch");
+let logs=[];
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fmt=v=>{try{return new Date(v).toLocaleString("id-ID")}catch{return v}};
+function render(){const q=search.value.toLowerCase();const rows=logs.filter(x=>JSON.stringify(x).toLowerCase().includes(q));body.innerHTML=rows.map(x=>`<tr><td>${fmt(x.created_at)}</td><td><b>${esc(x.actor)}</b></td><td>${esc(x.role)}</td><td><span class="badge">${esc(x.action)}</span></td><td>${esc(x.entity_type||"-")}</td><td>${esc(x.entity_id||"-")}</td><td class="detail-cell">${esc(x.detail||"-")}</td><td>${esc(x.ip_address||"-")}</td></tr>`).join("")||'<tr><td colspan="8">Belum ada log.</td></tr>'}
+async function load(){const r=await fetch("/api/logs?limit=500");logs=await r.json();render()}
+search.oninput=render;document.getElementById("refreshLogs").onclick=load;load();
+</script>
+</body></html>
