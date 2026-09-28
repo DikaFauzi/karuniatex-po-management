@@ -2,52 +2,127 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Struk {{ order["no_po"] }}</title>
 <style>
 @page{size:80mm auto;margin:4mm}
-body{margin:0;background:#eee;font-family:Arial,sans-serif;color:#111}
+body{margin:0;background:#eee;font-family:Arial;color:#111}
 .receipt{width:72mm;margin:15px auto;background:#fff;padding:5mm;box-sizing:border-box}
-.logo{display:block;width:58mm;height:auto;margin:0 auto 4mm}
-.center{text-align:center}.title{font-weight:800;font-size:16px}.small{font-size:11px}.line{border-top:1px dashed #222;margin:8px 0}
-.row{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin:3px 0}.row b{text-align:right}
-.item{font-size:12px;margin:7px 0}.item-name{font-weight:700}.muted{font-size:10px;color:#555}
-.total{font-size:13px;font-weight:700}.actions{text-align:center;margin:15px}
-.actions button{padding:9px 14px;border:0;border-radius:7px;background:#0e789c;color:#fff;font-weight:700}
-@media print{body{background:#fff}.receipt{margin:0;width:72mm;padding:2mm}.actions{display:none}}
+.logo{display:block;width:58mm;margin:0 auto 4mm}
+.center{text-align:center}.title{font-weight:800}.line{border-top:1px dashed #222;margin:8px 0}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:4px 0}.item{font-size:12px;margin:7px 0}.muted{font-size:10px;color:#555}
+.actions{max-width:620px;margin:15px auto 24px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;text-align:center;padding:0 12px}
+.printer-box{width:100%;background:#fff;border:1px solid #d5dde2;border-radius:10px;padding:10px 12px;box-sizing:border-box;text-align:left}
+.printer-box label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#234}
+.printer-row{display:flex;gap:8px}.printer-row select{flex:1;min-width:0;border:1px solid #bccbd4;border-radius:7px;padding:9px;background:#fff;font-weight:600}
+.printer-row button{border:1px solid #bccbd4;background:#f5f8fa;border-radius:7px;padding:8px 10px;cursor:pointer}
+.printer-hint{font-size:11px;color:#5b6b75;margin-top:6px;line-height:1.35}
+.actions>button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700}.auto-cut{background:#0b6f8d;color:white}.normal-print{background:white;color:#234;border:1px solid #ccd6dd!important}.status{width:100%;font-size:12px;margin-top:4px;min-height:18px}
+.status.error{color:#a12828}.status.ok{color:#146a32}
+@media print{body{background:#fff}.receipt{margin:0}.actions{display:none}}
 </style>
 </head>
 <body>
 <div class="receipt">
-  <img class="logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex">
+  <img class="logo" src="{{ url_for('static',filename='img/karuniatex-logo.png') }}">
   <div class="center title">STRUK PESANAN / DP</div>
-  <div class="center small">{{ order["no_po"] }}</div>
+  <div class="center">{{ order["no_po"] }}</div>
   <div class="line"></div>
   <div class="row"><span>Customer</span><b>{{ order["customer"] }}</b></div>
-  <div class="row"><span>Tanggal</span><b>{{ order["tanggal"] }}</b></div>
+  <div class="row"><span>Tanggal</span><b>{{ order["tanggal"]|date_id }}</b></div>
+  <div class="row"><span>Jam Dibuat</span><b>{{ order["created_at"]|time_id }} WIB</b></div>
   <div class="row"><span>Status</span><b>{{ order["status"] }}</b></div>
-  <div class="row"><span>Target</span><b>{{ order["target"] }}</b></div>
+  <div class="row"><span>Admin</span><b>{{ operator }}</b></div>
   <div class="line"></div>
   {% for i in order["items"] %}
-  <div class="item">
-    <div class="item-name">{{ loop.index }}. {{ i.jenis_kain }} - {{ i.warna }}</div>
-    <div class="muted">{{ i.qty_kg }} KG • {{ i.qty_roll }} Roll × Rp {{ "{:,.0f}".format(i.harga_per_kg).replace(",", ".") }}</div>
-    <div class="row"><span>Total Item</span><b>Rp {{ "{:,.0f}".format(i.qty_kg * i.harga_per_kg).replace(",", ".") }}</b></div>
-  </div>
+  <div class="item"><b>{{ loop.index }}. {{ i.jenis_kain }} - {{ i.warna }}</b><div class="muted">{{ i.qty_kg }} KG • {{ i.qty_roll }} Roll × Rp {{ "{:,.0f}".format(i.harga_per_kg).replace(",",".") }}</div></div>
   {% endfor %}
   <div class="line"></div>
-  <div class="row total"><span>Total</span><b>Rp {{ "{:,.0f}".format(order["total"]).replace(",", ".") }}</b></div>
-  <div class="row total"><span>Total DP</span><b>Rp {{ "{:,.0f}".format(order["total_dp"]).replace(",", ".") }}</b></div>
-  <div class="row total"><span>Sisa</span><b>Rp {{ "{:,.0f}".format(order["sisa"]).replace(",", ".") }}</b></div>
-  {% if order["payments"] %}
-  <div class="line"></div>
-  <div class="small"><b>RIWAYAT DP</b></div>
-  {% for p in order["payments"] %}
-  <div class="row"><span>{{ p.created_at }}</span><b>Rp {{ "{:,.0f}".format(p.nominal).replace(",", ".") }}</b></div>
-  {% endfor %}
-  {% endif %}
-  <div class="line"></div>
-  <div class="center small">Terima kasih</div>
+  <div class="row"><span>Total</span><b>Rp {{ "{:,.0f}".format(order["total"]).replace(",",".") }}</b></div>
+  <div class="row"><span>Total DP</span><b>Rp {{ "{:,.0f}".format(order["total_dp"]).replace(",",".") }}</b></div>
+  <div class="row"><span>Sisa</span><b>Rp {{ "{:,.0f}".format(order["sisa"]).replace(",",".") }}</b></div>
 </div>
-<div class="actions"><button onclick="window.print()">🖨 Print Struk</button></div>
+
+<div class="actions">
+  <div class="printer-box">
+    <label for="printerSelect">Printer Thermal Tujuan</label>
+    <div class="printer-row">
+      <select id="printerSelect"><option>Memuat printer...</option></select>
+      <button type="button" id="refreshPrinterBtn" title="Muat ulang daftar printer">↻</button>
+    </div>
+    <div id="printerHint" class="printer-hint">Aplikasi akan memprioritaskan printer dengan nama 80C / POS-80 / Thermal, bukan printer laser default Windows.</div>
+  </div>
+  <button id="autoCutBtn" class="auto-cut">🧾 Print Thermal + Auto Cut</button>
+  <button class="normal-print" onclick="window.print()">🖨 Print Biasa / PDF</button>
+  <div id="printStatus" class="status"></div>
+</div>
+<script>
+const autoCutBtn=document.getElementById('autoCutBtn');
+const printStatus=document.getElementById('printStatus');
+const printerSelect=document.getElementById('printerSelect');
+const printerHint=document.getElementById('printerHint');
+const refreshPrinterBtn=document.getElementById('refreshPrinterBtn');
+
+function setStatus(msg,type=''){
+  printStatus.textContent=msg;
+  printStatus.className='status'+(type?' '+type:'');
+}
+
+async function loadPrinters(){
+  printerSelect.disabled=true;
+  refreshPrinterBtn.disabled=true;
+  printerSelect.innerHTML='<option>Memuat printer...</option>';
+  try{
+    const res=await fetch('{{ url_for("printer_status") }}',{headers:{'X-Requested-With':'fetch'}});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.error||'Tidak bisa membaca printer Windows.');
+    const printers=Array.isArray(data.printers)?data.printers:[];
+    printerSelect.innerHTML='';
+    if(!printers.length){
+      printerSelect.innerHTML='<option value="">Tidak ada printer terdeteksi</option>';
+      throw new Error('Tidak ada printer yang terdeteksi pada PC server.');
+    }
+    printers.forEach(name=>{
+      const opt=document.createElement('option');
+      opt.value=name; opt.textContent=name;
+      if(name===data.printer) opt.selected=true;
+      printerSelect.appendChild(opt);
+    });
+    const defaultInfo=data.default_printer ? `Printer default Windows: ${data.default_printer}.` : '';
+    printerHint.textContent=`Target thermal otomatis: ${data.printer}. ${defaultInfo} Anda tetap bisa memilih printer lain dari daftar.`;
+    setStatus('');
+  }catch(err){
+    setStatus('Gagal membaca printer: '+err.message,'error');
+  }finally{
+    printerSelect.disabled=false;
+    refreshPrinterBtn.disabled=false;
+  }
+}
+
+refreshPrinterBtn.addEventListener('click',loadPrinters);
+
+autoCutBtn.addEventListener('click',async()=>{
+  const printer=printerSelect.value;
+  if(!printer){setStatus('Pilih printer thermal terlebih dahulu.','error');return;}
+  autoCutBtn.disabled=true;
+  setStatus(`Mengirim struk ke ${printer}...`);
+  try{
+    const res=await fetch('{{ url_for("api_print_receipt", oid=order["id"]) }}',{
+      method:'POST',
+      headers:{'X-Requested-With':'fetch','Content-Type':'application/json'},
+      body:JSON.stringify({printer})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'Print gagal.');
+    setStatus(`Job berhasil dikirim ke ${data.printer}. Perintah auto-cut sudah dikirim ke spooler Windows.`,'ok');
+  }catch(err){
+    setStatus('Gagal: '+err.message,'error');
+  }finally{
+    autoCutBtn.disabled=false;
+  }
+});
+
+loadPrinters();
+</script>
 </body>
 </html>
