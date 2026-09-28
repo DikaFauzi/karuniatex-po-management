@@ -1,25 +1,321 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Akses User - KaruniaTex</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=production7.0">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}?v=users-ui-final">
 </head>
-<body>
-<header class="topbar">
-  <div class="brand-wrap"><img class="brand-logo" src="{{ url_for('static', filename='img/karuniatex-logo.png') }}" alt="KaruniaTex"><div class="brand-text"><small>SERVER CONTROL</small><h1>Akses User</h1><p>Kelola PIN SERVER, ADMIN 1, ADMIN 2, dan ADMIN 3.</p></div></div>
-  <div class="actions"><span class="user-chip"><b>{{ user.display_name }}</b><small>{{ user.role }}</small></span><a class="btn light" href="/">← Dashboard</a></div>
+<body class="users-page">
+
+<header class="topbar users-topbar">
+  <div class="brand-text">
+    <small>SERVER CONTROL</small>
+    <h1>Akses User</h1>
+    <p>Kelola akun admin tanpa menghapus histori aktivitas.</p>
+  </div>
+  <div class="actions">
+    <span class="user-chip">
+      <b>{{ user.display_name or user.username }}</b>
+      <small>SERVER</small>
+    </span>
+    <a class="btn light" href="/">← Dashboard</a>
+  </div>
 </header>
-<main class="container">
-  <section class="card access-note"><b>Pembagian akses</b><p><strong>SERVER:</strong> full akses. <strong>ADMIN 1–3:</strong> operasional PO, DP, foto, print, template, dan export laporan. Penghapusan PO, Master Data, Import Excel, Log, Restore DP, serta pengaturan PIN hanya SERVER.</p></section>
-  <section id="userGrid" class="user-grid"></section>
+
+<main class="container users-container">
+
+  <section class="user-summary-grid">
+    <article class="user-summary-card">
+      <span>Total Akun</span>
+      <strong id="sumTotal">0</strong>
+      <small>SERVER + ADMIN</small>
+    </article>
+    <article class="user-summary-card">
+      <span>Admin Aktif</span>
+      <strong id="sumActive">0</strong>
+      <small>Dapat login ke sistem</small>
+    </article>
+    <article class="user-summary-card">
+      <span>Admin Nonaktif</span>
+      <strong id="sumInactive">0</strong>
+      <small>Histori tetap tersimpan</small>
+    </article>
+  </section>
+
+  <section class="card user-create-panel">
+    <div class="user-panel-head">
+      <div>
+        <small>TAMBAH USER</small>
+        <h2>Tambah Admin Baru</h2>
+        <p>Buat akun baru. Role ADMIN diberikan otomatis oleh sistem.</p>
+      </div>
+      <span class="user-panel-icon">＋</span>
+    </div>
+
+    <div class="add-admin-grid polished">
+      <label>
+        <span>Nama Petugas</span>
+        <input id="newAdminName" maxlength="30" autocomplete="off" placeholder="Contoh: ISMA">
+        <small>Nama yang tampil pada identitas petugas.</small>
+      </label>
+
+      <label>
+        <span>Username Login</span>
+        <input id="newAdminUsername" maxlength="30" autocomplete="off" placeholder="Contoh: isma">
+        <small>Harus unik, minimal 3 karakter.</small>
+      </label>
+
+      <label>
+        <span>PIN 6 Digit</span>
+        <input id="newAdminPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="••••••">
+        <small>Hanya angka, tepat 6 digit.</small>
+      </label>
+
+      <button class="btn primary add-admin-submit" type="button" id="addAdminBtn">
+        + Tambah Admin
+      </button>
+    </div>
+  </section>
+
+  <section class="users-section-head">
+    <div>
+      <small>DAFTAR USER</small>
+      <h2>SERVER & Admin</h2>
+      <p>Ubah nama, PIN, atau status akun dari satu halaman.</p>
+    </div>
+    <div class="user-legend">
+      <span><i class="dot-active"></i> Aktif</span>
+      <span><i class="dot-inactive"></i> Nonaktif</span>
+    </div>
+  </section>
+
+  <section id="userGrid" class="user-grid polished-grid">
+    <div class="users-loading">Memuat data user...</div>
+  </section>
+
+  <section class="card users-security-note">
+    <div class="security-icon">🔒</div>
+    <div>
+      <strong>Catatan keamanan</strong>
+      <p>Akun SERVER tidak dapat dinonaktifkan. Admin yang dinonaktifkan tidak dapat login, tetapi histori PO dan Audit Log tetap tersimpan.</p>
+    </div>
+  </section>
 </main>
+
 <script>
-let users=[];const grid=document.getElementById("userGrid");
+let users=[];
+const grid=document.getElementById("userGrid");
 const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-function render(){grid.innerHTML=users.map(u=>`<article class="card user-access-card"><div class="user-access-head"><div><span class="summary-eyebrow">${esc(u.role)}</span><h3>${esc(u.display_name)}</h3><small>Username: ${esc(u.username)}</small></div><span class="badge">${u.active?"AKTIF":"NONAKTIF"}</span></div><label><span>PIN Baru (6 digit)</span><input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" data-pin="${u.id}" placeholder="••••••"></label><button class="btn primary" data-save-pin="${u.id}">Simpan PIN</button></article>`).join("")}
-async function load(){const r=await fetch("/api/users");users=await r.json();render()}
-grid.onclick=async e=>{const b=e.target.closest("[data-save-pin]");if(!b)return;const id=b.dataset.savePin,input=grid.querySelector(`[data-pin="${id}"]`),pin=input.value.trim();if(!/^\d{6}$/.test(pin)){alert("PIN harus 6 digit angka.");return}if(!confirm("Ubah PIN akun ini?"))return;const r=await fetch("/api/users/"+id+"/pin",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin})});const j=await r.json();if(!r.ok){alert(j.error||"Gagal");return}input.value="";alert("PIN berhasil diubah.")};
+
+function roleLabel(u){
+  if(String(u.role).toUpperCase()==="SERVER") return "SERVER";
+  const admins=users.filter(x=>String(x.role).toUpperCase()==="ADMIN");
+  const idx=admins.findIndex(x=>Number(x.id)===Number(u.id));
+  return `ADMIN ${idx>=0?idx+1:""}`.trim();
+}
+function identity(u){
+  const role=roleLabel(u);
+  const name=String(u.display_name||"").trim().toUpperCase();
+  const generic=/^ADMIN\s*\d*$/i.test(name)||name==="SERVER";
+  return name && !generic ? `${role} (${name})` : role;
+}
+function updateSummary(){
+  const admins=users.filter(u=>String(u.role).toUpperCase()==="ADMIN");
+  document.getElementById("sumTotal").textContent=users.length;
+  document.getElementById("sumActive").textContent=admins.filter(u=>Number(u.active)!==0).length;
+  document.getElementById("sumInactive").textContent=admins.filter(u=>Number(u.active)===0).length;
+}
+
+function render(){
+  updateSummary();
+  grid.innerHTML=users.map(u=>{
+    const active=Number(u.active)!==0;
+    const isServer=String(u.role).toUpperCase()==="SERVER";
+    return `
+    <article class="card user-access-card polished-card ${active?"":"user-inactive"}">
+      <div class="user-card-top">
+        <div class="user-avatar ${isServer?"server-avatar":""}">${isServer?"S":"A"}</div>
+        <div class="user-card-identity">
+          <div class="role-line">
+            <span class="role-pill">${esc(roleLabel(u))}</span>
+            <span class="status-pill ${active?"active":"inactive"}">
+              <i></i>${active?"AKTIF":"NONAKTIF"}
+            </span>
+          </div>
+          <h3>${esc(identity(u))}</h3>
+          <p>@${esc(u.username)}</p>
+        </div>
+      </div>
+
+      <div class="user-divider"></div>
+
+      <div class="user-control-group">
+        <div class="control-title">
+          <span>Nama Petugas</span>
+          <small>Maks. 30 karakter</small>
+        </div>
+        <div class="inline-action">
+          <input type="text" maxlength="30"
+                 value="${esc(u.display_name||"")}"
+                 data-name="${u.id}" ${active?"":"disabled"}>
+          <button class="btn light compact-btn" type="button"
+                  data-save-name="${u.id}" ${active?"":"disabled"}>Simpan</button>
+        </div>
+      </div>
+
+      <div class="user-control-group">
+        <div class="control-title">
+          <span>Status PIN</span>
+          <small>Tersimpan aman sebagai hash</small>
+        </div>
+        <div class="server-protected">🔒 PIN lama tidak dapat ditampilkan kembali. Gunakan Ganti PIN untuk membuat PIN baru.</div>
+      </div>
+
+      <div class="user-control-group">
+        <div class="control-title">
+          <span>Ganti PIN</span>
+          <small>6 digit angka</small>
+        </div>
+        <div class="inline-action">
+          <input type="password" inputmode="numeric" maxlength="6"
+                 autocomplete="new-password"
+                 data-pin="${u.id}" placeholder="PIN baru"
+                 ${active?"":"disabled"}>
+          <button class="btn primary compact-btn" type="button"
+                  data-save-pin="${u.id}" ${active?"":"disabled"}>Update</button>
+        </div>
+      </div>
+
+      <div class="user-card-footer">
+        ${isServer ? `
+          <div class="server-protected">🔒 Akun utama SERVER dilindungi</div>
+        ` : `
+          <button class="btn ${active?"danger":"success"} account-state-btn"
+                  type="button"
+                  data-active-user="${u.id}"
+                  data-next-active="${active?0:1}">
+            ${active?"Nonaktifkan Admin":"Aktifkan Kembali"}
+          </button>
+        `}
+      </div>
+    </article>`;
+  }).join("");
+}
+
+async function load(){
+  grid.innerHTML='<div class="users-loading">Memuat data user...</div>';
+  const r=await fetch("/api/users",{cache:"no-store"});
+  const j=await r.json();
+  if(!r.ok){
+    grid.innerHTML='<div class="users-loading error">Gagal memuat user.</div>';
+    return alert(j.error||"Gagal memuat user.");
+  }
+  users=j;
+  render();
+}
+
+document.getElementById("addAdminBtn").onclick=async()=>{
+  const btn=document.getElementById("addAdminBtn");
+  const display_name=document.getElementById("newAdminName").value.trim();
+  const username=document.getElementById("newAdminUsername").value.trim().toLowerCase();
+  const pin=document.getElementById("newAdminPin").value.trim();
+
+  if(!display_name)return alert("Nama petugas wajib diisi.");
+  if(!/^[a-z0-9._-]{3,30}$/.test(username))return alert("Username minimal 3 karakter dan hanya huruf kecil, angka, titik, strip, atau underscore.");
+  if(!/^\d{6}$/.test(pin))return alert("PIN harus tepat 6 digit angka.");
+
+  btn.disabled=true;
+  btn.textContent="Menyimpan...";
+  try{
+    const r=await fetch("/api/users",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({display_name,username,pin})
+    });
+    const j=await r.json();
+    if(!r.ok)return alert(j.error||"Gagal menambah admin.");
+
+    document.getElementById("newAdminName").value="";
+    document.getElementById("newAdminUsername").value="";
+    document.getElementById("newAdminPin").value="";
+    await load();
+    alert("Admin baru berhasil ditambahkan.");
+  }finally{
+    btn.disabled=false;
+    btn.textContent="+ Tambah Admin";
+  }
+};
+
+grid.addEventListener("click",async e=>{
+  const nameBtn=e.target.closest("[data-save-name]");
+  if(nameBtn){
+    const id=nameBtn.dataset.saveName;
+    const input=grid.querySelector(`[data-name="${id}"]`);
+    const display_name=(input?.value||"").trim();
+    if(!display_name)return alert("Nama petugas wajib diisi.");
+    if(display_name.length>30)return alert("Nama petugas maksimal 30 karakter.");
+
+    nameBtn.disabled=true;
+    try{
+      const r=await fetch("/api/users/"+id+"/name",{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({display_name})
+      });
+      const j=await r.json();
+      if(!r.ok)return alert(j.error||"Gagal menyimpan nama.");
+      await load();
+    }finally{nameBtn.disabled=false}
+    return;
+  }
+
+  const pinBtn=e.target.closest("[data-save-pin]");
+  if(pinBtn){
+    const id=pinBtn.dataset.savePin;
+    const input=grid.querySelector(`[data-pin="${id}"]`);
+    const pin=(input?.value||"").trim();
+    if(!/^\d{6}$/.test(pin))return alert("PIN harus tepat 6 digit angka.");
+
+    pinBtn.disabled=true;
+    try{
+      const r=await fetch("/api/users/"+id+"/pin",{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({pin})
+      });
+      const j=await r.json();
+      if(!r.ok)return alert(j.error||"Gagal mengubah PIN.");
+      await load();
+      alert("PIN berhasil diperbarui.");
+    }finally{pinBtn.disabled=false}
+    return;
+  }
+
+  const stateBtn=e.target.closest("[data-active-user]");
+  if(stateBtn){
+    const id=stateBtn.dataset.activeUser;
+    const active=stateBtn.dataset.nextActive==="1";
+    const msg=active
+      ?"Aktifkan kembali admin ini?"
+      :"Nonaktifkan admin ini? Akun tidak dapat login, tetapi histori tetap tersimpan.";
+    if(!confirm(msg))return;
+
+    stateBtn.disabled=true;
+    try{
+      const r=await fetch("/api/users/"+id+"/active",{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({active})
+      });
+      const j=await r.json();
+      if(!r.ok)return alert(j.error||"Gagal mengubah status akun.");
+      await load();
+    }finally{stateBtn.disabled=false}
+  }
+});
+
 load();
 </script>
-</body></html>
+</body>
+</html>
